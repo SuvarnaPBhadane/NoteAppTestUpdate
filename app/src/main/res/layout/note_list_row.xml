@@ -1,45 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    android:id="@+id/relativeLayout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:clickable="true"
     android:foreground="?attr/selectableItemBackground"
-    android:padding="10dp">
+    android:paddingBottom="@dimen/dimen_10"
+    android:paddingLeft="@dimen/activity_margin"
+    android:paddingRight="@dimen/activity_margin"
+    android:paddingTop="@dimen/dimen_10">
 
     <TextView
         android:id="@+id/dot"
         android:layout_width="wrap_content"
-        android:layout_height="30dp"
-        android:layout_margin="10dp"
+        android:layout_height="@dimen/dot_height"
+        android:layout_marginEnd="@dimen/dot_margin_right"
+        android:layout_marginTop="@dimen/dimen_10"
         android:includeFontPadding="false"
         android:textColor="@color/colorAccent"
         android:lineSpacingExtra="0dp"
-        android:textSize="16sp" />
+        android:textSize="@dimen/dot_text_size" />
 
     <TextView
-        android:id="@+id/timestamp"
+        android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/dot"
-        android:textColor="#000"
-        android:textSize="16sp" />
+        android:layout_toEndOf="@id/dot"
+        android:textColor="@color/note_list_text"
+        android:textSize="@dimen/note_list_text" />
 
     <TextView
         android:id="@+id/note"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/timestamp"
-        android:layout_toRightOf="@id/dot"
-        android:textColor="#000000"
-        android:textSize="16sp" />
+        android:layout_below="@id/title"
+        android:layout_toEndOf="@id/dot"
+        android:textColor="@color/note_list_text"
+        android:textSize="@dimen/note_list_text" />
 
     <TextView
-        android:id="@+id/note2"
+        android:id="@+id/priority"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/note"
-        android:layout_toRightOf="@id/dot"
-        android:textColor="#000000"
-        android:textSize="16sp" />
+        android:layout_toEndOf="@id/dot"
+        android:textColor="@color/note_list_text"
+        android:textSize="@dimen/note_list_text" />
 
 </RelativeLayout>

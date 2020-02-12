@@ -1,13 +1,12 @@
 package com.example.noteappdemo;
 
-import android.app.AlertDialog;
+import android.R.layout;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
-import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -16,27 +15,35 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import database.DatabaseHelper;
+import model.Note;
+import utils.MyDividerItemDecoration;
+import view.NotesAdapter;
+
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+    public static final String TAG = MainActivity.class.getName();
+
     private NotesAdapter mAdapter;
     private List<Note> notesList = new ArrayList<>();
     private CoordinatorLayout coordinatorLayout;
     private RecyclerView recyclerView;
     private TextView noNotesView;
+    String pos;
     private DatabaseHelper db;
-
+    ArrayList<String> list = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,14 +51,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        setTitle("Notes");
 
-        coordinatorLayout = findViewById(R.id.coordinator_layout);
+        //coordinatorLayout = findViewById(R.id.coordinator_layout);
         recyclerView = findViewById(R.id.recycler_view);
         noNotesView = findViewById(R.id.empty_notes_view);
+
+
 
         db = new DatabaseHelper(this);
 
         notesList.addAll(db.getAllNotes());
+
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -61,19 +72,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        list.add("Select priority");
+        list.add("Low");
+        list.add("Medium");
+        list.add("High");
+
+
         mAdapter = new NotesAdapter(this, notesList);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
-        //recyclerView.addItemDecoration(new MyDividerItemDecoration(this, LinearLayoutManager.VERTICAL, 16));
+        recyclerView.addItemDecoration(new MyDividerItemDecoration(this, LinearLayoutManager.VERTICAL, 16));
         recyclerView.setAdapter(mAdapter);
 
         toggleEmptyNotes();
+
     }
-
-
-
-
 
     private void showNoteDialog(final boolean shouldUpdate, final Note note, final int position) {
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getApplicationContext());
@@ -82,21 +96,26 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder alertDialogBuilderUserInput = new AlertDialog.Builder(MainActivity.this);
         alertDialogBuilderUserInput.setView(view);
 
-        final EditText inputTitle = view.findViewById(R.id.note2);
+        final EditText inputTitle = view.findViewById(R.id.title);
         final EditText inputNote = view.findViewById(R.id.note);
+
+         Spinner spin = view.findViewById(R.id.simpleSpinner);
+        spin.setOnItemSelectedListener(this);
+        ArrayAdapter<String> aa = new ArrayAdapter<>(this, layout.simple_spinner_item,list);
+        aa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spin.setAdapter(aa);
 
         TextView dialogTitle = view.findViewById(R.id.dialog_title);
         dialogTitle.setText(!shouldUpdate ? getString(R.string.lbl_new_note_title) : getString(R.string.lbl_edit_note_title));
-
         if (shouldUpdate && note != null) {
-            inputNote.setText(note.getNote());
             inputTitle.setText(note.getTitle());
+            inputNote.setText(note.getNote());
         }
+
         alertDialogBuilderUserInput
                 .setCancelable(false)
                 .setPositiveButton(shouldUpdate ? "update" : "save", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogBox, int id) {
-
                     }
                 })
                 .setNegativeButton("cancel",
@@ -123,22 +142,22 @@ public class MainActivity extends AppCompatActivity {
                 // check if user updating note
                 if (shouldUpdate && note != null) {
                     // update note by it's id
-                    updateNote(inputNote.getText().toString(),inputTitle.getText().toString(), position);
+                    updateNote(inputTitle.getText().toString(),inputNote.getText().toString(),pos, position);
                 } else {
                     // create new note
-                    createNote(inputNote.getText().toString());
+                    createNote(inputTitle.getText().toString(),inputNote.getText().toString(),pos);
                 }
             }
         });
     }
 
+    private void createNote(String title, String note, String priority) {
+        // inserting note in db and getting
+        // newly inserted note id
+        long id = db.insertNote(title, note, priority);
 
-
-    private void createNote(String note) {
-        long id = db.insertNote(note);
-       // long id2 = db.insertNote(s);
+        // get the newly inserted note from db
         Note n = db.getNote(id);
-       // Note n2 = db.getNote(id2);
 
         if (n != null) {
             // adding new note to array list at 0 position
@@ -151,11 +170,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateNote(String note, String s, int position) {
+    private void updateNote(String title,String note, String priority,int position) {
         Note n = notesList.get(position);
         // updating note text
+        n.setTitle(title);
         n.setNote(note);
-        n.setTitle(s);
+        n.setPriority(priority);
 
         // updating note in db
         db.updateNote(n);
@@ -167,28 +187,6 @@ public class MainActivity extends AppCompatActivity {
         toggleEmptyNotes();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     private void toggleEmptyNotes() {
         // you can check notesList.size() > 0
 
@@ -198,4 +196,19 @@ public class MainActivity extends AppCompatActivity {
             noNotesView.setVisibility(View.VISIBLE);
         }
     }
+
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        list.get(position);
+        Log.d(TAG,"get next pos: "+list.get(position));
+        pos = list.get(position);
+        Log.d(TAG,"next pos: "+pos);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+    }
 }
+
+
